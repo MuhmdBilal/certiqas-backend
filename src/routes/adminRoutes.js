@@ -32,7 +32,14 @@ router.post(
   createAdmin
 );
 router.get("/", verifyToken, checkRole(["SuperAdmin"]), getAdmins);
-router.put("/update/:id", verifyToken, checkRole(["SuperAdmin"]), updateAdmin);
+router.put(
+  "/update/:id",
+  verifyToken,
+  checkRole(["SuperAdmin"]),
+  deleteAdminValidation,
+  handleValidation,
+  updateAdmin
+);
 router.delete(
   "/delete/:id",
   verifyToken,

@@ -20,7 +20,6 @@ export const createAdminValidation = [
     .withMessage("Password must be at least 6 characters"),
 ];
 
-
 export const deleteAdminValidation = [
   param("id")
     .notEmpty().withMessage("Admin ID is required")

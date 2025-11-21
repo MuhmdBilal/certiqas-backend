@@ -42,8 +42,8 @@ router.put(
   "/update/:id",
   verifyToken,
   checkRole(["SuperAdmin"]),
-  updateAdminValidation,
-  handleValidation,
+  // updateAdminValidation,
+  // handleValidation,
   updateAdmin
 );
 

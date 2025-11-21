@@ -21,10 +21,8 @@ const { handleValidation } = require("../middlewares/validationMiddleware");
 
 const router = express.Router();
 
-// Login
 router.post("/login", loginUser);
 
-// Create Admin
 router.post(
   "/create",
   verifyToken,
@@ -33,21 +31,8 @@ router.post(
   handleValidation,
   createAdmin
 );
-
-// Get All Admins
 router.get("/", verifyToken, checkRole(["SuperAdmin"]), getAdmins);
-
-// Update Admin
-router.put(
-  "/update/:id",
-  verifyToken,
-  checkRole(["SuperAdmin"]),
-  // updateAdminValidation,
-  // handleValidation,
-  updateAdmin
-);
-
-// Delete Admin
+router.put("/update/:id", verifyToken, checkRole(["SuperAdmin"]), updateAdmin);
 router.delete(
   "/delete/:id",
   verifyToken,

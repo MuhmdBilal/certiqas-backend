@@ -79,6 +79,9 @@ const getAdmins = async (req, res) => {
 const updateAdmin = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ message: "Admin ID is required" });
+    }
     const { name, email, password } = req.body;
     const updateData = { name, email };
 
@@ -104,12 +107,12 @@ const updateAdmin = async (req, res) => {
   }
 };
 
-module.exports = { updateAdmin };
-
 const deleteAdmin = async (req, res) => {
   try {
     const { id } = req.params;
-
+    if (!id) {
+      return res.status(400).json({ message: "Admin ID is required" });
+    }
     const admin = await User.findByIdAndDelete(id);
 
     if (!admin) {

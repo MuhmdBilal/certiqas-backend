@@ -19,9 +19,3 @@ export const createAdminValidation = [
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters"),
 ];
-
-export const deleteAdminValidation = [
-  param("id")
-    .notEmpty().withMessage("Admin ID is required")
-    .isMongoId().withMessage("Invalid Admin ID"),
-];

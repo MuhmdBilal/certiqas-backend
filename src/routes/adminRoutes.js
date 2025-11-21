@@ -13,8 +13,6 @@ const { checkRole } = require("../middlewares/roleMiddleware");
 
 const {
   createAdminValidation,
-  updateAdminValidation,
-  deleteAdminValidation,
 } = require("../validations/adminValidation");
 
 const { handleValidation } = require("../middlewares/validationMiddleware");
@@ -32,20 +30,11 @@ router.post(
   createAdmin
 );
 router.get("/", verifyToken, checkRole(["SuperAdmin"]), getAdmins);
-router.put(
-  "/update/:id",
-  verifyToken,
-  checkRole(["SuperAdmin"]),
-  deleteAdminValidation,
-  handleValidation,
-  updateAdmin
-);
+router.put("/update/:id", verifyToken, checkRole(["SuperAdmin"]), updateAdmin);
 router.delete(
   "/delete/:id",
-  verifyToken,
-  checkRole(["SuperAdmin"]),
-  deleteAdminValidation,
-  handleValidation,
+  // verifyToken,
+  // checkRole(["SuperAdmin"]),
   deleteAdmin
 );
 

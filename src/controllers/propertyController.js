@@ -1,37 +1,34 @@
 const { default: ipfs } = require("../helpers/ipfs");
 const uploadToIPFS = require("../helpers/ipfsUpload");
+require("dotenv").config();
 
+const { NFTStorage, File } = require('nft.storage');
+const multer = require("multer");
+const fs = require('fs');
+console.log("process.env.NFT_STORAGE_KEY", process.env.NFT_STORAGE_KEY);
+
+const client = new NFTStorage({ token: process.env.NFT_STORAGE_KEY });
 const createProperty = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
-    const added = await ipfs.add(req.file.buffer);
-   console.log("added", added);
-   
-    const url = `https://ipfs.io/ipfs/${added.path}`;
+ try {
+    const { originalname, mimetype, buffer } = req.file;
 
-    return res.json({
-      success: true,
-      hash: added.path,
-      url,
+    const file = new File([buffer], originalname, {
+      type: mimetype,
     });
 
-    // const fileBuffer = req.file.buffer;
-    // const fileName = req.file.originalname;
+    const cid = await client.storeBlob(file);
 
-    // const result = await uploadToIPFS(fileBuffer, fileName);
+    res.json({
+      success: true,
+      cid,
+      url: `https://ipfs.io/ipfs/${cid}`,
+    });
 
-    // res.json({
-    //   success: true,
-    // //   result: result
-    //   cid: result.cid,
-    //   url: result.url,
-    // });
-  } catch (err) {
-    console.log("err", err);
-    
-    res.status(500).json({ success: false, message: err.message });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 

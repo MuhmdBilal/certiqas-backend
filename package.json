@@ -24,6 +24,7 @@
     "mongodb": "^7.0.0",
     "mongoose": "^8.20.0",
     "multer": "^2.0.2",
+    "nft.storage": "^7.2.0",
     "pinata-web3": "^0.5.4"
   },
   "devDependencies": {

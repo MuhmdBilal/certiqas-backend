@@ -2,10 +2,18 @@ const Broker = require("../models/Broker");
 
 const createBroker = async (req, res) => {
   try {
-    const broker = await Broker.create(req.body);
+    const { brokerName, brokerEmail, contactNo } = req.body;
+
+    // Check if email already exists
+    const existingBroker = await Broker.findOne({ brokerEmail });
+    if (existingBroker) {
+      return res.status(400).json({ error: "Email already exists" });
+    }
+
+    const broker = await Broker.create({ brokerName, brokerEmail, contactNo });
     res.status(201).json({ message: "Broker created successfully", broker });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 

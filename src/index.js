@@ -3,6 +3,7 @@ const express = require("express");
 const connectDB = require("./config/db");
 const adminRoutes = require("./routes/adminRoutes");
 const propertyRoutes = require("./routes/propertyRoutes");
+const brokerRoutes = require("./routes/brokerRoutes");
 const cors = require("cors");
 const app = express();
 app.use(express.json());
@@ -12,12 +13,13 @@ connectDB();
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/properties", propertyRoutes );
-// const PORT = process.env.PORT || 8000;
-// app.listen(PORT, "0.0.0.0", () => {
-//   console.log(`Server running on port ${PORT}`);
-// });
-app.listen("8000", () => {
-  console.log(`Server running on port 8000`);
+app.use("/api/broker", brokerRoutes);
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });
+// app.listen("8000", () => {
+//   console.log(`Server running on port 8000`);
+// });
 
 

@@ -1,8 +1,9 @@
-const Property = require("../models/Property");
 const uploadToIPFS = require("../helpers/ipfsUpload");
 const ethers = require("ethers");
 const uploadMetadataToIPFS = require("../helpers/uploadMetadata");
 const { mintCertificate } = require("../helpers/blockchain");
+const Properties = require("../models/Property");
+
 const createProperty = async (req, res) => {
   try {
     const imageFile = req.files?.image?.[0];
@@ -35,7 +36,7 @@ const createProperty = async (req, res) => {
       brokerCompany,
       description,
     } = req.body;
-    const verificationDate = Date.now();
+    const verificationDate = Math.floor(Date.now() / 1000) - 40;
     const verificationHash = ethers.keccak256(
       ethers.solidityPacked(
         [
@@ -114,7 +115,7 @@ const createProperty = async (req, res) => {
       schema_version: "1.0.0",
     };
     const metadataUploadURL = await uploadMetadataToIPFS(metadataTemplate);
-    const listingId =Math.random().toString(36).substring(2, 6).toUpperCase()
+    const listingId = Math.random().toString(36).substring(2, 6).toUpperCase();
     const mintPayload = {
       reraPermit,
       propertyId,
@@ -130,34 +131,31 @@ const createProperty = async (req, res) => {
       expiresAt: 0,
     };
     const receipt = await mintCertificate(mintPayload);
-
-    res.json({
-      success: true,
-      message: "Property created & certificate minted successfully!",
-      txHash: receipt.transactionHash,
-      receipt
-    });
     // Save property in DB
-    // const property = await Property.create({
-    //   imageCid: uploadedImage.cid,
-    //   imageUrl: uploadedImage.url,
-
-    //   fileCid: uploadedFile.cid,
-    //   fileUrl: uploadedFile.url,
-    //   reraPermit,
-    //   propertyId,
-    //   developerName,
-    //   projectName,
-    //   location,
-    //   unitType,
-    //   brokerCompany,
-    //   Description,
-    // });
+    const property = await Properties.create({
+      imageCid: uploadedImage.cid,
+      imageUrl: uploadedImage.url,
+      fileCid: uploadedFile.cid,
+      fileUrl: uploadedFile.url,
+      reraPermit,
+      propertyId,
+      developerName,
+      projectName,
+      location,
+      unitType,
+      brokerCompany,
+      description,
+      verificationDate,
+      verificationHash,
+      tokenUri: metadataUploadURL,
+      expiresAt: 0,
+      mintTransactionHash: receipt.hash,
+    });
 
     res.json({
       success: true,
-      message: "Property created successfully!",
-      metadataUpload,
+      message: "Property created and minted successfully!",
+      property,
     });
   } catch (error) {
     res.status(500).json({
@@ -167,4 +165,46 @@ const createProperty = async (req, res) => {
   }
 };
 
-module.exports = { createProperty };
+
+const getAllProperties = async (req, res) => {
+  try {
+    const properties = await Properties.find().sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: properties.length,
+      properties,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const getPropertyById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const property = await Properties.findById(id);
+
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: "Property not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      property,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+module.exports = { createProperty,getAllProperties, getPropertyById };

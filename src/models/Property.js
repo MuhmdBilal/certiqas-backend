@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const PropertySchema = new mongoose.Schema(
   {
@@ -37,7 +37,7 @@ const PropertySchema = new mongoose.Schema(
       required: true,
     },
 
-    Description: {
+    description: {
       type: String,
       required: true,
     },
@@ -53,8 +53,9 @@ const PropertySchema = new mongoose.Schema(
     verificationHash: String,
     tokenUri: String,
     expiresAt: String,
+    mintTransactionHash : String,
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Property", PropertySchema);
+module.exports = mongoose.model("Properties", PropertySchema);

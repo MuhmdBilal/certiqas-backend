@@ -16,8 +16,6 @@ const contract = new ethers.Contract(
 
 const mintCertificate = async (data) => {
   try {
-    console.log("Calling mintCertificate...", data);
-
     const tx = await contract.mintCertificate(
       process.env.WALLET_ADDRESS,
       data.reraPermit,
@@ -33,8 +31,6 @@ const mintCertificate = async (data) => {
       data.tokenUri,
       data.expiresAt
     );
-
-    console.log("TX hash:", tx.hash);
     const receipt = await tx.wait();
 
     return receipt;

@@ -1,9 +1,7 @@
-// middleware/roleMiddleware.js
-
 export const checkRole = (allowedRoles) => {
   return (req, res, next) => {
     try {
-      const user = req.user; // set in authMiddleware after JWT verification
+      const user = req.user;
 
       if (!user) {
         return res.status(401).json({ message: "Unauthorized, user not found" });

@@ -17,6 +17,11 @@ const brokerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    developerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: false,
+  }, 
   },
   { timestamps: true }
 );

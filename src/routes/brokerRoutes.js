@@ -9,7 +9,7 @@ const {
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { checkRole } = require("../middlewares/roleMiddleware");
 const router = express.Router();
-const allowedRoles = ["SuperAdmin", "Admin"];
+const allowedRoles = ["SuperAdmin", "Developer"];
 
 router.post("/create", verifyToken, checkRole(allowedRoles), createBroker);
 router.get("/get-all", verifyToken, checkRole(allowedRoles), getAllBrokers);

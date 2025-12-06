@@ -11,30 +11,33 @@ const {
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { checkRole } = require("../middlewares/roleMiddleware");
 
-const {
-  createAdminValidation,
-} = require("../validations/adminValidation");
+const { createAdminValidation } = require("../validations/adminValidation");
 
 const { handleValidation } = require("../middlewares/validationMiddleware");
 
 const router = express.Router();
 
+const allowedRoles = ["SuperAdmin", "Developer"];
 router.post("/login", loginUser);
-
 router.post(
   "/create",
   verifyToken,
-  checkRole(["SuperAdmin"]),
+  checkRole(allowedRoles),
   createAdminValidation,
   handleValidation,
   createAdmin
 );
-router.get("/", verifyToken, checkRole(["SuperAdmin"]), getAdmins);
-router.put("/update/:id", verifyToken, checkRole(["SuperAdmin"]), updateAdmin);
+router.get("/", verifyToken, checkRole(allowedRoles), getAdmins);
+router.put(
+  "/update/:id",
+  verifyToken,
+  checkRole(allowedRoles),
+  updateAdmin
+);
 router.delete(
   "/delete/:id",
-  // verifyToken,
-  // checkRole(["SuperAdmin"]),
+  verifyToken,
+  checkRole(allowedRoles),
   deleteAdmin
 );
 

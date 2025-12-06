@@ -14,7 +14,6 @@ const loginUser = async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Incorrect password" });
 
-    // Generate JWT Token
     const token = jwt.sign(
       {
         userId: user._id,
@@ -85,37 +84,10 @@ const createAdmin = async (req, res) => {
   }
 };
 
-// const createAdmin = async (req, res) => {
-//   try {
-//     const { name, email, password } = req.body;
-
-//     const exists = await User.findOne({ email });
-//     if (exists) {
-//       return res.status(400).json({ message: "Email already exists" });
-//     }
-
-//     const developer = await User.create({
-//       name,
-//       email,
-//       password,
-//       role: "Developer",
-//     });
-
-//     res.status(201).json({
-//       message: "Developer created successfully",
-//       developer,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
 // GET ALL ADMINS
 const getAdmins = async (req, res) => {
   try {
     const user = req.user;
-    console.log("111111111111", user);
-    
     if (user.role === "SuperAdmin") {
       const users = await User.find({
         role: { $ne: "SuperAdmin" },
@@ -126,7 +98,7 @@ const getAdmins = async (req, res) => {
     if (user.role === "Developer") {
       const assistants = await User.find({
         role: "Assistant",
-        developerId: user.userId,
+        developerId: user.userId|| user.id ,
       }).select("-password");
 
       return res.status(200).json({ assistants });
@@ -158,7 +130,7 @@ const updateAdmin = async (req, res) => {
     if (user.role === "Developer") {
       if (
         targetUser.role !== "Assistant" ||
-        targetUser.developerId.toString() !== user.userId
+        targetUser.developerId.toString() !== (req.user.id || req.user.userId)
       ) {
         return res.status(403).json({
           message: "Access denied. You can only update your own assistants.",
@@ -166,7 +138,6 @@ const updateAdmin = async (req, res) => {
       }
     }
 
-    // Prepare update data
     const { name, email, password } = req.body;
     const updateData = { name, email };
 
@@ -201,7 +172,6 @@ const deleteAdmin = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ===== SUPERADMIN CAN DELETE ANYONE EXCEPT SUPERADMIN =====
     if (user.role === "SuperAdmin") {
       if (targetUser.role === "SuperAdmin") {
         return res.status(403).json({
@@ -210,11 +180,10 @@ const deleteAdmin = async (req, res) => {
       }
     }
 
-    // ===== DEVELOPER CAN DELETE ONLY HIS ASSISTANTS =====
     if (user.role === "Developer") {
       if (
         targetUser.role !== "Assistant" ||
-        targetUser.developerId.toString() !== user.userId
+        targetUser.developerId.toString() !== (req.user.id || req.user.userId)
       ) {
         return res.status(403).json({
           message: "Access denied. You can only delete your own assistants.",

@@ -54,6 +54,7 @@ const PropertySchema = new mongoose.Schema(
     tokenUri: String,
     expiresAt: String,
     mintTransactionHash : String,
+    mintingStatus: Boolean
   },
   { timestamps: true }
 );

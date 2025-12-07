@@ -5,11 +5,12 @@ const {
   createProperty,
   getAllProperties,
   getPropertyById,
+  mintPendingProperty,
 } = require("../controllers/propertyController");
 const { checkRole } = require("../middlewares/roleMiddleware");
 
 const router = express.Router();
-const allowedRoles = ["SuperAdmin", "Admin"];
+const allowedRoles = ["SuperAdmin", "Developer"];
 router.post(
   "/create-property",
   verifyToken,
@@ -20,7 +21,22 @@ router.post(
   ]),
   createProperty
 );
-
-router.get("/all-property", verifyToken, checkRole(allowedRoles), getAllProperties);
-router.get("/property/:id", verifyToken, checkRole(allowedRoles), getPropertyById);
+router.post(
+  "/mint-property/:id",
+  verifyToken,
+  checkRole(["SuperAdmin"]),
+  mintPendingProperty
+);
+router.get(
+  "/all-property",
+  verifyToken,
+  checkRole(allowedRoles),
+  getAllProperties
+);
+router.get(
+  "/property/:id",
+  verifyToken,
+  checkRole(allowedRoles),
+  getPropertyById
+);
 module.exports = router;

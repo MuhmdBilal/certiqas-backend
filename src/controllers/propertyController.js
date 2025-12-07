@@ -6,6 +6,8 @@ const Properties = require("../models/Property");
 
 const createProperty = async (req, res) => {
   try {
+    const role = req.user.role;
+
     const imageFile = req.files?.image?.[0];
     const otherFile = req.files?.file?.[0];
 
@@ -14,18 +16,6 @@ const createProperty = async (req, res) => {
         message: "Image and File both are required",
       });
     }
-
-    // Upload Image to IPFS
-    const uploadedImage = await uploadToIPFS(
-      imageFile.buffer,
-      imageFile.originalname
-    );
-
-    // Upload Document/File to IPFS
-    const uploadedFile = await uploadToIPFS(
-      otherFile.buffer,
-      otherFile.originalname
-    );
     const {
       reraPermit,
       propertyId,
@@ -36,6 +26,29 @@ const createProperty = async (req, res) => {
       brokerCompany,
       description,
     } = req.body;
+
+    const duplicate = await Properties.findOne({
+      $or: [{ reraPermit }, { propertyId }, { projectName }, { unitType }],
+    });
+
+    if (duplicate) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Duplicate property! reraPermit, propertyId, projectName, and unitType must be unique.",
+      });
+    }
+
+    const uploadedImage = await uploadToIPFS(
+      imageFile.buffer,
+      imageFile.originalname
+    );
+
+    const uploadedFile = await uploadToIPFS(
+      otherFile.buffer,
+      otherFile.originalname
+    );
+
     const verificationDate = Math.floor(Date.now() / 1000) - 40;
     const verificationHash = ethers.keccak256(
       ethers.solidityPacked(
@@ -64,79 +77,65 @@ const createProperty = async (req, res) => {
 
     const metadataTemplate = {
       name: "Certiqas",
-      description: description,
+      description,
       image: `ipfs://${uploadedImage.cid}`,
       file: `ipfs://${uploadedFile.cid}`,
-      external_url: "",
       attributes: [
-        {
-          trait_type: "Property ID",
-          value: propertyId,
-        },
-        {
-          trait_type: "Developer Name",
-          value: developerName,
-        },
-        {
-          trait_type: "Project Name",
-          value: projectName,
-        },
-        {
-          trait_type: "Location",
-          value: location,
-        },
-        {
-          trait_type: "Broker Company",
-          value: brokerCompany,
-        },
+        { trait_type: "Property ID", value: propertyId },
+        { trait_type: "Developer Name", value: developerName },
+        { trait_type: "Project Name", value: projectName },
+        { trait_type: "Location", value: location },
+        { trait_type: "Broker Company", value: brokerCompany },
         {
           trait_type: "Verification Date",
           display_type: "date",
           value: verificationDate,
         },
-        {
-          trait_type: "Verification Hash",
-          value: verificationHash,
-        },
-
-        {
-          trait_type: "RERA Permit",
-          value: reraPermit,
-        },
-        {
-          trait_type: "Description",
-          value: description,
-        },
-        {
-          trait_type: "Unit Type",
-          value: unitType,
-        },
+        { trait_type: "Verification Hash", value: verificationHash },
+        { trait_type: "RERA Permit", value: reraPermit },
+        { trait_type: "Description", value: description },
+        { trait_type: "Unit Type", value: unitType },
       ],
-      schema_version: "1.0.0",
     };
+
     const metadataUploadURL = await uploadMetadataToIPFS(metadataTemplate);
-    const listingId = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const mintPayload = {
-      reraPermit,
-      propertyId,
-      developerName,
-      projectName,
-      location,
-      unitType,
-      brokerCompany,
-      listingId,
-      verificationDate,
-      verificationHash,
-      tokenUri: metadataUploadURL,
-      expiresAt: 0,
-    };
-    const receipt = await mintCertificate(mintPayload);
-    // Save property in DB
+
+    let mintingStatus = false;
+    let mintTransactionHash = null;
+
+    if (role === "SuperAdmin") {
+      const listingId = Math.random()
+        .toString(36)
+        .substring(2, 8)
+        .toUpperCase();
+
+      const mintPayload = {
+        reraPermit,
+        propertyId,
+        developerName,
+        projectName,
+        location,
+        unitType,
+        brokerCompany,
+        listingId,
+        verificationDate,
+        verificationHash,
+        tokenUri: metadataUploadURL,
+        expiresAt: 0,
+      };
+
+      const receipt = await mintCertificate(mintPayload);
+
+      mintingStatus = true;
+      mintTransactionHash = receipt.hash;
+    }
+
     const property = await Properties.create({
       imageCid: uploadedImage.cid,
       imageUrl: uploadedImage.url,
       fileCid: uploadedFile.cid,
       fileUrl: uploadedFile.url,
+
       reraPermit,
       propertyId,
       developerName,
@@ -145,31 +144,81 @@ const createProperty = async (req, res) => {
       unitType,
       brokerCompany,
       description,
+
       verificationDate,
       verificationHash,
       tokenUri: metadataUploadURL,
       expiresAt: 0,
-      mintTransactionHash: receipt.hash,
+
+      mintingStatus,
+      mintTransactionHash,
     });
 
     res.json({
       success: true,
-      message: "Property created and minted successfully!",
+      message:
+        role === "SuperAdmin"
+          ? "Property created and minted successfully!"
+          : "Property created successfully (Pending SuperAdmin minting).",
       property,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
+const mintPendingProperty = async (req, res) => {
+  try {
+    const property = await Properties.findById(req.params.id);
+
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    if (property.mintingStatus === true) {
+      return res.status(400).json({ message: "Property already minted" });
+    }
+
+    const mintPayload = {
+      reraPermit: property.reraPermit,
+      propertyId: property.propertyId,
+      developerName: property.developerName,
+      projectName: property.projectName,
+      location: property.location,
+      unitType: property.unitType,
+      brokerCompany: property.brokerCompany,
+      listingId: Math.random().toString(36).substring(2, 8).toUpperCase(),
+      verificationDate: property.verificationDate,
+      verificationHash: property.verificationHash,
+      tokenUri: property.tokenUri,
+      expiresAt: 0,
+    };
+
+    const receipt = await mintCertificate(mintPayload);
+
+    property.mintingStatus = true;
+    property.mintTransactionHash = receipt.hash;
+    await property.save();
+
+    res.json({
+      success: true,
+      message: "Property minted successfully!",
+      property,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 const getAllProperties = async (req, res) => {
   try {
-    const properties = await Properties.find().sort({ createdAt: -1 });
-
+    const { status } = req.query;
+    const properties = await Properties.find({ mintingStatus: status }).sort({
+      createdAt: -1,
+    });
     res.json({
       success: true,
       count: properties.length,
@@ -207,4 +256,9 @@ const getPropertyById = async (req, res) => {
     });
   }
 };
-module.exports = { createProperty,getAllProperties, getPropertyById };
+module.exports = {
+  createProperty,
+  getAllProperties,
+  getPropertyById,
+  mintPendingProperty,
+};

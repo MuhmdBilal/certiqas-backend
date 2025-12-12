@@ -138,8 +138,8 @@ const updateAdmin = async (req, res) => {
       }
     }
 
-    const { name, email, password } = req.body;
-    const updateData = { name, email };
+    const { name, email, password, companyName } = req.body;
+    const updateData = { name, email, companyName };
 
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);

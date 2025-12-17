@@ -28,14 +28,14 @@ const createProperty = async (req, res) => {
     } = req.body;
 
     const duplicate = await Properties.findOne({
-      $or: [{ reraPermit }, { propertyId }, { projectName }, { unitType }],
+      $or: [{ propertyId }],
     });
 
     if (duplicate) {
       return res.status(400).json({
         success: false,
         message:
-          "Duplicate property! reraPermit, propertyId, projectName, and unitType must be unique.",
+          " propertyId must be unique.",
       });
     }
 
@@ -100,7 +100,7 @@ const createProperty = async (req, res) => {
 
     const metadataUploadURL = await uploadMetadataToIPFS(metadataTemplate);
 
-    let mintingStatus = false;
+    let mintingStatus = "pending";
     let mintTransactionHash = null;
 
     if (role === "SuperAdmin") {
@@ -126,7 +126,7 @@ const createProperty = async (req, res) => {
 
       const receipt = await mintCertificate(mintPayload);
 
-      mintingStatus = true;
+      mintingStatus = "approved";
       mintTransactionHash = receipt.hash;
     }
 
@@ -172,14 +172,35 @@ const createProperty = async (req, res) => {
 
 const mintPendingProperty = async (req, res) => {
   try {
+    const { status } = req.body;
+
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status. Allowed values: approved, rejected",
+      });
+    }
+
     const property = await Properties.findById(req.params.id);
 
     if (!property) {
       return res.status(404).json({ message: "Property not found" });
     }
 
-    if (property.mintingStatus === true) {
-      return res.status(400).json({ message: "Property already minted" });
+    if (property.mintingStatus !== "pending") {
+      return res.status(400).json({
+        message: `Property already ${property.mintingStatus}`,
+      });
+    }
+
+    if (status === "rejected") {
+      property.mintingStatus = "rejected";
+      await property.save();
+
+      return res.json({
+        success: true,
+        message: "Property rejected successfully",
+        property,
+      });
     }
 
     const mintPayload = {
@@ -199,26 +220,45 @@ const mintPendingProperty = async (req, res) => {
 
     const receipt = await mintCertificate(mintPayload);
 
-    property.mintingStatus = true;
+    property.mintingStatus = "approved";
     property.mintTransactionHash = receipt.hash;
+
     await property.save();
 
     res.json({
       success: true,
-      message: "Property minted successfully!",
+      message: "Property approved & minted successfully!",
       property,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
+
 
 const getAllProperties = async (req, res) => {
   try {
     const { status } = req.query;
-    const properties = await Properties.find({ mintingStatus: status }).sort({
+
+    const filter = {};
+    if (status) {
+      if (!["approved", "pending", "rejected"].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status. Allowed values: approved, pending, rejected",
+        });
+      }
+
+      filter.mintingStatus = status;
+    }
+
+    const properties = await Properties.find(filter).sort({
       createdAt: -1,
     });
+
     res.json({
       success: true,
       count: properties.length,
@@ -231,6 +271,7 @@ const getAllProperties = async (req, res) => {
     });
   }
 };
+
 
 const getPropertyById = async (req, res) => {
   try {

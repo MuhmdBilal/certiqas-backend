@@ -6,37 +6,30 @@ const PropertySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
     propertyId: {
       type: String,
       required: true,
     },
-
     developerName: {
       type: String,
       required: true,
     },
-
     projectName: {
       type: String,
       required: true,
     },
-
     location: {
       type: String,
       required: true,
     },
-
     unitType: {
       type: String,
       required: true,
     },
-
     brokerCompany: {
       type: String,
       required: true,
     },
-
     description: {
       type: String,
       required: true,
@@ -53,8 +46,15 @@ const PropertySchema = new mongoose.Schema(
     verificationHash: String,
     tokenUri: String,
     expiresAt: String,
-    mintTransactionHash : String,
-    mintingStatus: Boolean
+    mintTransactionHash: String,
+
+    // ✅ Enum status
+    mintingStatus: {
+      type: String,
+      enum: ["approved", "pending", "rejected"],
+      default: "pending",
+      required: true,
+    },
   },
   { timestamps: true }
 );

@@ -34,6 +34,15 @@ const PropertySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    bedrooms: {
+      type: String,
+    },
+    bathrooms: {
+      type: String,
+    },
+    areaSqFt: {
+      type: String,
+    },
 
     // File Uploads
     imageCid: String,

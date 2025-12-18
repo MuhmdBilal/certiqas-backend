@@ -25,6 +25,9 @@ const createProperty = async (req, res) => {
       unitType,
       brokerCompany,
       description,
+      bedrooms,
+      bathrooms,
+      areaSqFt,
     } = req.body;
 
     const duplicate = await Properties.findOne({
@@ -95,6 +98,9 @@ const createProperty = async (req, res) => {
         { trait_type: "RERA Permit", value: reraPermit },
         { trait_type: "Description", value: description },
         { trait_type: "Unit Type", value: unitType },
+        { trait_type: "Bedrooms", value: bedrooms || "N/A" },
+        { trait_type: "Bathrooms", value: bathrooms || "N/A" },
+        { trait_type: "Area (Sq Ft)", value: areaSqFt || "N/A" },
       ],
     };
 
@@ -149,7 +155,9 @@ const createProperty = async (req, res) => {
       verificationHash,
       tokenUri: metadataUploadURL,
       expiresAt: 0,
-
+      bedrooms,
+      bathrooms,
+      areaSqFt,
       mintingStatus,
       mintTransactionHash,
     });
